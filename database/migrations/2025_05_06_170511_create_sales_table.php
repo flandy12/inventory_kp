@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('categories', function (Blueprint $table) {
+        Schema::create('sales', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('slug')->unique()->nullable();
+            $table->date('date');
+            $table->decimal('total_amount', 10, 2);
+            $table->enum('status', ['completed', 'pending', 'cancelled'])->nullable();
+            $table->enum('payment_method', ['cash', 'transfer', 'debit_card'])->nullable();
             $table->timestamps();
         });
     }
@@ -24,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('categories');
+        Schema::dropIfExists('sales');
     }
 };

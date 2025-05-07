@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Category\CategoryController;
+use App\Http\Controllers\Api\Checkout\CheckoutController;
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\RolePermission\RolePermissionController;
 use Illuminate\Http\Request;
@@ -50,6 +51,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/permissions/{permission}', [RolePermissionController::class, 'updatePermission']);
         Route::delete('/permissions/{permission}', [RolePermissionController::class, 'deletePermission']);
     });
+
+    Route::post('/checkout', [CheckoutController::class, 'store']);
+    
 });
 
-Route::get('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login']);
