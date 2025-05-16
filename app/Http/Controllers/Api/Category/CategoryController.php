@@ -24,13 +24,21 @@ class CategoryController extends Controller
         return response()->json(new CategoryResource($category), 201);
     }
 
-    public function show(Category $category): JsonResponse
+    public function show($id): JsonResponse
     {
-        return response()->json(new CategoryResource($category));
+        try {
+            $decryptedId = decrypt($id);
+            $category = Category::findOrFail($decryptedId);
+    
+            return response()->json($category);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Invalid or tampered ID'], 404);
+        }
     }
 
-    public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
+    public function update(UpdateCategoryRequest $request, $id): JsonResponse
     {
+        $category = Category::findOrFail(decrypt($id));
         $category->update($request->validated());
         return response()->json(new CategoryResource($category));
     }

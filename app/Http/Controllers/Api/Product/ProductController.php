@@ -10,6 +10,10 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
+
 
 class ProductController extends Controller
 {
@@ -28,12 +32,38 @@ class ProductController extends Controller
     public function store(StoreProductRequest $request): JsonResponse
     {
         $data = $request->validated();
-
+    
+        // Simpan gambar produk jika ada
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
         }
-
+        
+        // Simpan produk dulu untuk mendapatkan ID
         $product = Product::create($data);
+    
+        // Generate URL produk (pastikan route ini ada dan benar)
+        $url = route('products.show', ['product' => $product->id]);
+    
+        // Buat QR Code
+        $qrCode = new QrCode($url);
+        $writer = new PngWriter();
+        $result = $writer->write($qrCode);
+    
+        // Buat folder storage jika belum ada
+        $qrFolder = storage_path('app/public/qrcodes');
+        if (!file_exists($qrFolder)) {
+            mkdir($qrFolder, 0755, true);
+        }
+    
+        // Simpan file QR Code
+        $qrFileName = "product_{$product->id}.png";
+        $qrPath = "qrcodes/{$qrFileName}";
+        $result->saveToFile($qrFolder . '/' . $qrFileName);
+    
+        // Simpan path QR Code ke kolom barcode
+        $product->barcode = $qrPath; // atau gunakan kolom lain misalnya: $product->qr_code_image
+        $product->save();
+        
 
         return response()->json(new ProductResource($product), 201);
     }
@@ -79,5 +109,17 @@ class ProductController extends Controller
 
         return response()->json(null, 204);
     }
+
+    public function scanBarcode($barcode)
+    {
+        $product = Product::where('barcode', $barcode)->first();
+
+        if (!$product) {
+            return response()->json(['message' => 'Produk tidak ditemukan'], 404);
+        }
+
+        return response()->json(new ProductResource($product));
+    }
+
 }
 

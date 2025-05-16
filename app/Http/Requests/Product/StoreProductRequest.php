@@ -28,10 +28,10 @@ class StoreProductRequest extends FormRequest
             'category_id' => 'required|exists:categories,id',
             'price'       => 'required|numeric|min:0',
             'stock'       => 'required|integer|min:0',
-            'size'        => 'required|string|max:10',
-            'color'       => 'required|string|max:50',
+            'size'        => 'nullable|string|max:10',
+            'color'       => 'nullable|string|max:50',
             'description' => 'nullable|string',
-            'image'       => 'requeird|image|max:2048', // Maks 2MB
+            'image'       => 'nullable|image|max:2048', // Maks 2MB
         ];
     }
 

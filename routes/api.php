@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Checkout\CheckoutController;
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\RolePermission\RolePermissionController;
+use App\Http\Controllers\Transaction\TransactionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -24,16 +25,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 
     Route::apiResource('products', ProductController::class);
-    Route::apiResource('category', CategoryController::class);
+    Route::apiResource('categories', CategoryController::class);
+
+    Route::post('/checkout', [CheckoutController::class, 'store']);
+    Route::post('/transaction', [TransactionController::class, 'store']);
     
     Route::get('/roles', [RolePermissionController::class, 'roles']);
     Route::get('/permissions', [RolePermissionController::class, 'permissions']);
 
-
     Route::post('/users/{user}/assign-role', [RolePermissionController::class, 'assignRole']);
     Route::post('/roles/{role}/assign-permission', [RolePermissionController::class, 'givePermissionToRole']);
     Route::get('/users/{user}/check-permission', [RolePermissionController::class, 'checkPermission']);
-
 
     Route::group(['middleware' => ['role:admin']], function () {
         Route::post('/permissions', [RolePermissionController::class, 'createPermission']);
@@ -50,10 +52,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // Permission CRUD
         Route::put('/permissions/{permission}', [RolePermissionController::class, 'updatePermission']);
         Route::delete('/permissions/{permission}', [RolePermissionController::class, 'deletePermission']);
+        Route::get('/permissions', [RolePermissionController::class, 'index']);
     });
 
-    Route::post('/checkout', [CheckoutController::class, 'store']);
+
+    Route::get('/products/scan/{barcode}', [ProductController::class, 'scanBarcode']);
     
+    Route::get('/test', function (Request $request) {
+        return response()->json([
+            'id' => encrypt(1),
+        ]);
+    });
 });
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);

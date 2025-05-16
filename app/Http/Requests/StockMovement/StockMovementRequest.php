@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Http\Requests\Category;
+namespace App\Http\Requests\StockMovement;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class StoreCategoryRequest extends FormRequest
+class StockMovementRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        return false;
     }
 
     /**
@@ -24,7 +24,11 @@ class StoreCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255|unique:categories,name',
+            'product_id' => 'required|exists:products,id',
+            'type'       => 'required|in:in,out',
+            'quantity'   => 'required|integer|min:1',
+            'note'       => 'nullable|string|max:255',
+            'user_id'    => 'nullable|exists:users,id',
         ];
     }
 

@@ -11,7 +11,7 @@ class CheckoutRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return false;
     }
 
     /**
@@ -22,11 +22,11 @@ class CheckoutRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Validasi input
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|integer|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.price' => 'required|numeric|min:0',
-        ];
+            'items'               => 'required|array|min:1',
+            'items.*.product_id'  => 'required|exists:products,id',
+            'items.*.quantity'    => 'required|integer|min:1',
+            'items.*.price'       => 'required|numeric|min:0',
+            'payment_method'      => 'nullable|string|max:50',
+        ];    
     }
 }

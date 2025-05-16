@@ -10,12 +10,20 @@ class CheckoutItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'product_id', 'quantity', 'price'
+        'checkout_id',
+        'product_id',
+        'quantity',
+        'price',
     ];
 
     public function checkout()
     {
         return $this->belongsTo(Checkout::class);
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
     }
 
 }

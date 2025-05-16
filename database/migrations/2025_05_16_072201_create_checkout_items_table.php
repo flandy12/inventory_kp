@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sales', function (Blueprint $table) {
+        Schema::create('checkout_items', function (Blueprint $table) {
             $table->id();
-            $table->date('date');
-            $table->decimal('total_amount', 10, 2);
-            $table->enum('status', ['completed', 'pending', 'cancelled'])->nullable();
-            $table->enum('payment_method', ['cash', 'transfer', 'debit_card'])->nullable();
+            $table->foreignId('checkout_id')->constrained()->onDelete('cascade');
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->integer('quantity');
+            $table->decimal('price', 12, 2);
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sales');
+        Schema::dropIfExists('checkout_items');
     }
 };
