@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Checkout;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class CheckoutRequest extends FormRequest
 {
@@ -11,7 +13,7 @@ class CheckoutRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -28,5 +30,12 @@ class CheckoutRequest extends FormRequest
             'items.*.price'       => 'required|numeric|min:0',
             'payment_method'      => 'nullable|string|max:50',
         ];    
+    }
+
+    public function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'errors' => $validator->errors()
+        ], 422));
     }
 }

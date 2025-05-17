@@ -3,7 +3,9 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Checkout\CheckoutController;
+use App\Http\Controllers\Api\Permission\PermissionController;
 use App\Http\Controllers\Api\Product\ProductController;
+use App\Http\Controllers\Api\Role\RoleController;
 use App\Http\Controllers\Api\RolePermission\RolePermissionController;
 use App\Http\Controllers\Transaction\TransactionController;
 use Illuminate\Http\Request;
@@ -30,30 +32,31 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/checkout', [CheckoutController::class, 'store']);
     Route::post('/transaction', [TransactionController::class, 'store']);
     
-    Route::get('/roles', [RolePermissionController::class, 'roles']);
-    Route::get('/permissions', [RolePermissionController::class, 'permissions']);
+     // Permission routes
+     Route::apiResource('roles', RoleController::class);
+     Route::apiResource('permissions', PermissionController::class);
 
     Route::post('/users/{user}/assign-role', [RolePermissionController::class, 'assignRole']);
     Route::post('/roles/{role}/assign-permission', [RolePermissionController::class, 'givePermissionToRole']);
     Route::get('/users/{user}/check-permission', [RolePermissionController::class, 'checkPermission']);
 
-    Route::group(['middleware' => ['role:admin']], function () {
-        Route::post('/permissions', [RolePermissionController::class, 'createPermission']);
-        Route::post('/roles', [RolePermissionController::class, 'createRole']);
+    // Route::group(['middleware' => ['role:admin']], function () {
+    //     Route::post('/permissions', [RolePermissionController::class, 'createPermission']);
+    //     Route::post('/roles', [RolePermissionController::class, 'createRole']);
 
-        Route::post('/users/{user}/assign-role', [RolePermissionController::class, 'assignRole']);
-        Route::post('/roles/{role}/assign-permission', [RolePermissionController::class, 'givePermissionToRole']);
-        Route::get('/users/{user}/check-permission', [RolePermissionController::class, 'checkPermission']);
+    //     Route::post('/users/{user}/assign-role', [RolePermissionController::class, 'assignRole']);
+    //     Route::post('/roles/{role}/assign-permission', [RolePermissionController::class, 'givePermissionToRole']);
+    //     Route::get('/users/{user}/check-permission', [RolePermissionController::class, 'checkPermission']);
 
-        // Role CRUD
-        Route::put('/roles/{role}', [RolePermissionController::class, 'updateRole']);
-        Route::delete('/roles/{role}', [RolePermissionController::class, 'deleteRole']);
+    //     // Role CRUD
+    //     Route::put('/roles/{role}', [RolePermissionController::class, 'updateRole']);
+    //     Route::delete('/roles/{role}', [RolePermissionController::class, 'deleteRole']);
 
-        // Permission CRUD
-        Route::put('/permissions/{permission}', [RolePermissionController::class, 'updatePermission']);
-        Route::delete('/permissions/{permission}', [RolePermissionController::class, 'deletePermission']);
-        Route::get('/permissions', [RolePermissionController::class, 'index']);
-    });
+    //     // Permission CRUD
+    //     Route::put('/permissions/{permission}', [RolePermissionController::class, 'updatePermission']);
+    //     Route::delete('/permissions/{permission}', [RolePermissionController::class, 'deletePermission']);
+    //     Route::get('/permissions', [RolePermissionController::class, 'index']);
+    // });
 
 
     Route::get('/products/scan/{barcode}', [ProductController::class, 'scanBarcode']);
