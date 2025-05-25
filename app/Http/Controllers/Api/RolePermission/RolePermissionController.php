@@ -43,19 +43,44 @@ class RolePermissionController extends Controller
       // Assign role to user
       public function assignRole(Request $request, User $user)
       {
-          $request->validate(['role' => 'required|exists:roles,name']);
-          $user->assignRole($request->role);
-  
-          return response()->json(['message' => 'Role assigned.']);
+            $request->validate([
+                'role' => 'required|exists:roles,name',
+            ]);
+        
+            // Ambil role sesuai guard sanctum
+            $role = Role::where('name', $request->role)
+                        ->first();
+        
+            if (!$role) {
+                return response()->json(['error' => 'Role not found for guard sanctum.'], 404);
+            }
+        
+            // Assign role ke user
+            $user->assignRole($role);
+        
+            return response()->json(['message' => 'Role assigned.']);
       }
   
       // Assign permission to role
       public function givePermissionToRole(Request $request, Role $role)
       {
-          $request->validate(['permission' => 'required|exists:permissions,name']);
-          $role->givePermissionTo($request->permission);
-  
-          return response()->json(['message' => 'Permission assigned to role.']);
+        $request->validate([
+            'permission' => 'required|exists:permissions,name',
+        ]);
+    
+        // Pastikan permission dan role pakai guard yang sama (web)
+        $permission = Permission::where('name', $request->permission)
+                                ->where('guard_name', $role->guard_name) // harus cocok
+                                ->first();
+    
+        if (!$permission) {
+            return response()->json(['error' => 'Permission not found for guard `' . $role->guard_name . '`'], 404);
+        }
+    
+        // Assign permission to role
+        $role->givePermissionTo($permission);
+    
+        return response()->json(['message' => 'Permission assigned to role.']);
       }
   
       // Check if user has permission
@@ -105,5 +130,23 @@ class RolePermissionController extends Controller
         $permission->delete();
         return response()->json(['message' => 'Permission deleted.']);
     }
+
+    public function getUserRolesAndPermissions(User $user)
+    {
+        return response()->json([
+            'user_id' => $user->id,
+            'name' => $user->name,
+
+            // Semua role yang dimiliki user
+            'roles' => $user->getRoleNames(), // ['admin', 'editor']
+
+            // Semua permission yang dimiliki (langsung dan dari role)
+            'permissions' => $user->getAllPermissions()->pluck('name'), // ['edit post', 'delete post']
+
+            // Jika kamu ingin tahu permission yang langsung (tidak dari role)
+            'direct_permissions' => $user->getDirectPermissions()->pluck('name'),
+        ]);
+    }
+
 
 }

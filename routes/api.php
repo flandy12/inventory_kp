@@ -7,9 +7,11 @@ use App\Http\Controllers\Api\Permission\PermissionController;
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Role\RoleController;
 use App\Http\Controllers\Api\RolePermission\RolePermissionController;
+use App\Http\Controllers\Api\User\UserController;
 use App\Http\Controllers\Transaction\TransactionController;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 
@@ -42,6 +44,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/users/{user}/assign-role', [RolePermissionController::class, 'assignRole']);
     Route::post('/roles/{role}/assign-permission', [RolePermissionController::class, 'givePermissionToRole']);
     Route::get('/users/{user}/check-permission', [RolePermissionController::class, 'checkPermission']);
+    Route::get('/users/{user}/roles-permissions', [RolePermissionController::class, 'getUserRolesAndPermissions']);
+
+
+    Route::apiResource('/users', UserController::class);
 
     // Route::group(['middleware' => ['role:admin']], function () {
     //     Route::post('/permissions', [RolePermissionController::class, 'createPermission']);
@@ -70,5 +76,25 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // });
 });
 
-Route::post('/login', [AuthController::class, 'login']);
+
+// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//     return $request->user();
+// });
+
+Route::post('/login', function (Request $request) {
+    $user = User::where('email', $request->email)->first();
+
+    if (! $user || ! Hash::check($request->password, $user->password)) {
+        return response()->json(['message' => 'Login gagal'], 401);
+    }
+
+    $token = $user->createToken('api-token')->plainTextToken;
+
+    return response()->json([
+        'access_token' => $token,
+        'token_type' => 'Bearer',
+    ]);
+});
+
+
 Route::post('/register', [AuthController::class, 'register']);
