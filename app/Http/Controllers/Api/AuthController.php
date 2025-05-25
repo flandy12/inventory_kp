@@ -14,7 +14,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email'    => 'required|string|email|max:255|unique:users',
+            'email'    => 'required|string|email|max:255',
             'password' => 'required|string|min:6',
         ]);
 
@@ -25,7 +25,8 @@ class AuthController extends Controller
                 'errors'  => $validator->errors()
             ], 422);
         }
-        $user = User::where('name');
+        
+        $user = User::where('email', $request->email)->first();
 
         $token = $user->createToken('auth_token')->plainTextToken;
 

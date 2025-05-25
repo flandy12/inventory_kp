@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('stock');
             $table->string('color')->nullable();
             $table->text('description')->nullable();
-            $table->string('barcode')->uniqidue(); // nama file QR code
+            $table->string('barcode')->uniqidue()->nullable(); // nama file QR code
             $table->string('size')->nullable(); // seperti "S", "M", "L", "XL"
             $table->string('image')->nullable(); // nama file gambar
             $table->timestamps();

@@ -45,7 +45,7 @@ class TransactionController extends Controller
                 'price'          => $item['price'],
                 'subtotal'       => $item['quantity'] * $item['price'],
             ]);
-
+                
             $product->decrement('stock', $item['quantity']);
         }
 

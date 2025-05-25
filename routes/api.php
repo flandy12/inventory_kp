@@ -8,8 +8,11 @@ use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Role\RoleController;
 use App\Http\Controllers\Api\RolePermission\RolePermissionController;
 use App\Http\Controllers\Transaction\TransactionController;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Validator;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -32,9 +35,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/checkout', [CheckoutController::class, 'store']);
     Route::post('/transaction', [TransactionController::class, 'store']);
     
-     // Permission routes
-     Route::apiResource('roles', RoleController::class);
-     Route::apiResource('permissions', PermissionController::class);
+    // Permission routes
+    Route::apiResource('roles', RoleController::class);
+    Route::apiResource('permissions', PermissionController::class);
 
     Route::post('/users/{user}/assign-role', [RolePermissionController::class, 'assignRole']);
     Route::post('/roles/{role}/assign-permission', [RolePermissionController::class, 'givePermissionToRole']);
@@ -58,14 +61,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //     Route::get('/permissions', [RolePermissionController::class, 'index']);
     // });
 
-
     Route::get('/products/scan/{barcode}', [ProductController::class, 'scanBarcode']);
     
-    Route::get('/test', function (Request $request) {
-        return response()->json([
-            'id' => encrypt(1),
-        ]);
-    });
+    // Route::get('/test', function (Request $request) {
+    //     return response()->json([
+    //         'id' => encrypt(1),
+    //     ]);
+    // });
 });
 
 Route::post('/login', [AuthController::class, 'login']);
