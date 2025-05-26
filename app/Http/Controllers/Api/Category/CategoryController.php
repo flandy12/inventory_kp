@@ -15,13 +15,20 @@ class CategoryController extends Controller
     public function index(): JsonResponse
     {
         $categories = Category::paginate(10);
-        return response()->json(CategoryResource::collection($categories));
+
+        return response()->json([
+            'success'=> true,
+            'data' => CategoryResource::collection($categories)
+        ], 200);
     }
 
     public function store(StoreCategoryRequest $request): JsonResponse
     {
         $category = Category::create($request->validated());
-        return response()->json(new CategoryResource($category), 201);
+        return response()->json([
+            'success'=> true,
+            'data' => new CategoryResource($category)
+        ], 201);
     }
 
     public function show($id): JsonResponse
@@ -29,8 +36,12 @@ class CategoryController extends Controller
         try {
             $decryptedId = decrypt($id);
             $category = Category::findOrFail($decryptedId);
-    
-            return response()->json($category);
+            
+            return response()->json([
+                'success'=> true,
+                'data' => $category
+            ], 201);
+
         } catch (\Exception $e) {
             return response()->json(['error' => 'Invalid or tampered ID'], 404);
         }
@@ -40,12 +51,19 @@ class CategoryController extends Controller
     {
         $category = Category::findOrFail(decrypt($id));
         $category->update($request->validated());
-        return response()->json(new CategoryResource($category));
+        
+        return response()->json([
+            'success'=> true,
+            'data' => new CategoryResource($category)
+        ], 201);
     }
 
     public function destroy(Category $category): JsonResponse
     {
         $category->delete();
-        return response()->json(null, 204);
+        return response()->json([
+            'success'=> true,
+            'data' => []
+        ], 201);
     }
 }

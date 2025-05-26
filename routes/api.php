@@ -7,8 +7,10 @@ use App\Http\Controllers\Api\Permission\PermissionController;
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Role\RoleController;
 use App\Http\Controllers\Api\RolePermission\RolePermissionController;
+use App\Http\Controllers\Api\StockMovement\StockMovementController;
+use App\Http\Controllers\Api\Transaction\TransactionReportController;
 use App\Http\Controllers\Api\User\UserController;
-use App\Http\Controllers\Transaction\TransactionController;
+use App\Http\Controllers\Api\Transaction\TransactionController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -29,26 +31,27 @@ use Illuminate\Support\Facades\Validator;
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('register', [AuthController::class, 'register']);
+    
+    Route::apiResource('users', UserController::class);
 
+    Route::apiResource('stockmovements', StockMovementController::class);
+    Route::apiResource('transactions', TransactionController::class);
     Route::apiResource('products', ProductController::class);
     Route::apiResource('categories', CategoryController::class);
-
-    Route::post('/checkout', [CheckoutController::class, 'store']);
-    Route::post('/transaction', [TransactionController::class, 'store']);
     
     // Permission routes
     Route::apiResource('roles', RoleController::class);
     Route::apiResource('permissions', PermissionController::class);
 
-    Route::post('/users/{user}/assign-role', [RolePermissionController::class, 'assignRole']);
-    Route::post('/roles/{role}/assign-permission', [RolePermissionController::class, 'givePermissionToRole']);
-    Route::get('/users/{user}/check-permission', [RolePermissionController::class, 'checkPermission']);
-    Route::get('/users/{user}/roles-permissions', [RolePermissionController::class, 'getUserRolesAndPermissions']);
+    Route::post('users/{user}/assign-role', [RolePermissionController::class, 'assignRole']);
+    Route::post('roles/{role}/assign-permission', [RolePermissionController::class, 'givePermissionToRole']);
+    Route::get('users/{user}/check-permission', [RolePermissionController::class, 'checkPermission']);
+    Route::get('users/{user}/roles-permissions', [RolePermissionController::class, 'getUserRolesAndPermissions']);
 
-
-    Route::apiResource('/users', UserController::class);
-
+    Route::post('checkout', [CheckoutController::class, 'store']);
+    Route::post('transaction', [TransactionController::class, 'store']);
+    
     // Route::group(['middleware' => ['role:admin']], function () {
     //     Route::post('/permissions', [RolePermissionController::class, 'createPermission']);
     //     Route::post('/roles', [RolePermissionController::class, 'createRole']);
@@ -67,13 +70,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //     Route::get('/permissions', [RolePermissionController::class, 'index']);
     // });
 
-    Route::get('/products/scan/{barcode}', [ProductController::class, 'scanBarcode']);
+    Route::get('products/scan/{barcode}', [ProductController::class, 'scanBarcode']);
     
-    // Route::get('/test', function (Request $request) {
-    //     return response()->json([
-    //         'id' => encrypt(1),
-    //     ]);
-    // });
+    Route::get('stockmovements/stockin', [StockMovementController::class, 'stockin']);
+    Route::get('stockmovements/stockout', [StockMovementController::class, 'stockout']);
+    Route::get('export/stockin', [StockMovementController::class, 'exportStockIn'] );
+    Route::get('export/stockout', [StockMovementController::class, 'exportStockOut'] );
+
+    Route::get('reports/transactions', [TransactionReportController::class, 'index']);
+    Route::get('reports/transactions/date', [TransactionReportController::class, 'reportByDate']);
+    Route::get('reports/transactions/daily-summary', [TransactionReportController::class, 'dailySummary']);
+    Route::get('export/report', [TransactionReportController::class, 'exportReport'] );
+   
 });
 
 

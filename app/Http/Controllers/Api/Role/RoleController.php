@@ -23,7 +23,7 @@ class RoleController extends Controller
         if (Role::where('name', $request->name)->exists()) {
             return response()->json(['error' => 'Role name already exists.'], 422);
         }
-        $role = Role::create(['name' => $request->name]);
+        $role = Role::create(['name' => $request->name, 'guard_name' => 'web']);
         return response()->json($role, 201);
     }
 

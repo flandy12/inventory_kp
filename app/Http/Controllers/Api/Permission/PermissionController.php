@@ -19,7 +19,7 @@ class PermissionController extends Controller
             'name' => 'required|string|max:255|unique:permissions,name',
         ]);
         // Validate the request
-        $permission = Permission::create(['name' => $request->name, 'gueard_name' => 'name']);
+        $permission = Permission::create(['name' => $request->name, 'guard_name' => 'web']);
         return response()->json($permission, 201);
     }
 
