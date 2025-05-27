@@ -10,7 +10,10 @@ class RoleController extends Controller
 {
     public function index()
     {
-        return Role::with('permissions')->get();
+        $role = Role::with('permissions')->get();
+
+        return response()->json($role);
+
     }
 
     public function store(Request $request)
@@ -24,7 +27,7 @@ class RoleController extends Controller
             return response()->json(['error' => 'Role name already exists.'], 422);
         }
         $role = Role::create(['name' => $request->name, 'guard_name' => 'web']);
-        return response()->json($role, 201);
+        return response()->json($role,200);
     }
 
     public function show(Role $role)
@@ -50,6 +53,6 @@ class RoleController extends Controller
     public function destroy(Role $role)
     {
         $role->delete();
-        return response()->json(null, 204);
+        return response()->json(null, 200);
     }
 }
