@@ -13,7 +13,6 @@ class RoleController extends Controller
         $role = Role::with('permissions')->get();
 
         return response()->json($role);
-
     }
 
     public function store(Request $request)
@@ -55,4 +54,31 @@ class RoleController extends Controller
         $role->delete();
         return response()->json(null, 200);
     }
+
+    // ✅ GET: Lihat permissions yang dimiliki role
+    public function syncPermissions(Role $role)
+    {
+        $permissions = $role->permissions->pluck('name');
+        return response()->json([
+            'role' => $role->name,
+            'permissions' => $permissions,
+        ]);
+    }
+
+
+     public function assignPermissions(Request $request, Role $role)
+     {
+         $request->validate([
+             'permissions' => 'required|array',
+             'permissions.*' => 'string|exists:permissions,name',
+         ]);
+ 
+         $role->syncPermissions($request->permissions);
+ 
+         return response()->json([
+             'message' => 'Permissions updated successfully',
+             'permissions' => $role->permissions->pluck('name')
+         ]);
+     }
+    
 }

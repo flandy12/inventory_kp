@@ -58,8 +58,11 @@ class CategoryController extends Controller
         ], 201);
     }
 
-    public function destroy(Category $category): JsonResponse
-    {
+    public function destroy($id): JsonResponse
+    {   
+        $decryptedId = decrypt($id);
+        $category = Category::find($decryptedId);
+       
         $category->delete();
         return response()->json([
             'success'=> true,

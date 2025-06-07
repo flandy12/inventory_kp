@@ -30,58 +30,83 @@ use Illuminate\Support\Facades\Validator;
 */
 
 Route::middleware(['auth:sanctum'])->group(function () {
-
+    
+    /**
+     * AUTH
+     */
     Route::post('register', [AuthController::class, 'register']);
-    
-    Route::apiResource('users', UserController::class);
 
-    Route::apiResource('stockmovements', StockMovementController::class);
-    Route::apiResource('transactions', TransactionController::class);
-    Route::apiResource('products', ProductController::class);
-    Route::apiResource('categories', CategoryController::class);
-    
-    // Permission routes
+    /**
+     * USER & PERMISSION MANAGEMENT
+     */
+    Route::prefix('users')->controller(RolePermissionController::class)->group(function () {
+        Route::get('roles-permissions', 'getAllUsersWithRolesAndPermissions'); // All users
+        Route::get('{user}/roles-permissions', 'getUserRolesAndPermissions');  // Specific user
+        Route::post('{user}/assign-role', 'assignRole');
+        Route::put('{user}/update-role', 'updateRole'); 
+        Route::get('{user}/check-permission', 'checkPermission');
+    });
+
+    Route::prefix('roles')->controller(RolePermissionController::class)->group(function () {
+        Route::post('{role}/assign-permission', 'givePermissionToRole');
+    });
+
     Route::apiResource('roles', RoleController::class);
+    // Mendapatkan permission role
+    Route::get('roles/{role}/permissions', [RoleController::class, 'syncPermissions']);
+
+    // Menyimpan/assign permission ke role
+    Route::post('roles/{role}/permissions', [RoleController::class, 'assignPermissions']);
+    
     Route::apiResource('permissions', PermissionController::class);
 
-    Route::post('users/{user}/assign-role', [RolePermissionController::class, 'assignRole']);
-    Route::post('roles/{role}/assign-permission', [RolePermissionController::class, 'givePermissionToRole']);
-    Route::get('users/{user}/check-permission', [RolePermissionController::class, 'checkPermission']);
-    Route::get('users/{user}/roles-permissions', [RolePermissionController::class, 'getUserRolesAndPermissions']);
+    /**
+     * USERS
+     */
+    Route::apiResource('users', UserController::class);
 
-    Route::post('checkout', [CheckoutController::class, 'store']);
+    /**
+     * PRODUCT & CATEGORY
+     */
+    Route::apiResource('products', ProductController::class);
+    Route::get('products/scan/{id}', [ProductController::class, 'scanBarcode']);
+    Route::get('products/{id}/barcode', [ProductController::class, 'getBarcodeGenerate']);
+   
+    Route::apiResource('categories', CategoryController::class);
+
+    /**
+     * STOCK MOVEMENT
+     */
+    Route::get('stockmovements/stockin', [StockMovementController::class, 'getStockIn']);
+    Route::get('stockmovements/stockout', [StockMovementController::class, 'getStockOut']);
+    Route::post('stockmovements/stockin', [StockMovementController::class, 'stockin']);
+
+    Route::apiResource('stockmovements', StockMovementController::class);
+  
+    Route::get('export/stockin', [StockMovementController::class, 'exportStockIn']);
+    Route::get('export/stockout', [StockMovementController::class, 'exportStockOut']);
+    // Route::post('stockmovements/stockout', [StockMovementController::class, 'stockout']);
+
+
+    /**
+     * TRANSACTIONS
+     */
+    Route::apiResource('transactions', TransactionController::class);
     Route::post('transaction', [TransactionController::class, 'store']);
-    
-    // Route::group(['middleware' => ['role:admin']], function () {
-    //     Route::post('/permissions', [RolePermissionController::class, 'createPermission']);
-    //     Route::post('/roles', [RolePermissionController::class, 'createRole']);
+    Route::post('checkout', [CheckoutController::class, 'store']);
+    Route::get('checkout/bestseller', [CheckoutController::class, 'getProductBestSeller']);
+    Route::get('checkout', [CheckoutController::class, 'index']);
 
-    //     Route::post('/users/{user}/assign-role', [RolePermissionController::class, 'assignRole']);
-    //     Route::post('/roles/{role}/assign-permission', [RolePermissionController::class, 'givePermissionToRole']);
-    //     Route::get('/users/{user}/check-permission', [RolePermissionController::class, 'checkPermission']);
 
-    //     // Role CRUD
-    //     Route::put('/roles/{role}', [RolePermissionController::class, 'updateRole']);
-    //     Route::delete('/roles/{role}', [RolePermissionController::class, 'deleteRole']);
 
-    //     // Permission CRUD
-    //     Route::put('/permissions/{permission}', [RolePermissionController::class, 'updatePermission']);
-    //     Route::delete('/permissions/{permission}', [RolePermissionController::class, 'deletePermission']);
-    //     Route::get('/permissions', [RolePermissionController::class, 'index']);
-    // });
-
-    Route::get('products/scan/{barcode}', [ProductController::class, 'scanBarcode']);
-    
-    Route::get('stockmovements/stockin', [StockMovementController::class, 'stockin']);
-    Route::get('stockmovements/stockout', [StockMovementController::class, 'stockout']);
-    Route::get('export/stockin', [StockMovementController::class, 'exportStockIn'] );
-    Route::get('export/stockout', [StockMovementController::class, 'exportStockOut'] );
-
+    /**
+     * REPORT
+     */
     Route::get('reports/transactions', [TransactionReportController::class, 'index']);
     Route::get('reports/transactions/date', [TransactionReportController::class, 'reportByDate']);
     Route::get('reports/transactions/daily-summary', [TransactionReportController::class, 'dailySummary']);
-    Route::get('export/report', [TransactionReportController::class, 'exportReport'] );
-   
+    Route::get('export/report', [TransactionReportController::class, 'exportReport']);
+
 });
 
 
@@ -101,6 +126,14 @@ Route::post('/login', function (Request $request) {
     return response()->json([
         'access_token' => $token,
         'token_type' => 'Bearer',
+        'data' => [
+            'id' => encrypt($user->id),
+            'name' => $user->name,
+            'email' => $user->email,
+            'profile_url' => $user->profile_photo_url,
+            'role' => $user->roles->pluck('name')->first(), // Ambil 1 role (jika hanya 1 yang digunakan)
+            'permissions' => $user->getAllPermissions()->pluck('name'),
+        ]
     ]);
 });
 

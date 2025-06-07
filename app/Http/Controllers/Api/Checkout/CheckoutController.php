@@ -8,10 +8,17 @@ use App\Models\Checkout;
 use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 
 class CheckoutController extends Controller
 {
+    public function index() {
+        $checkouts = Checkout::with('items.product.category')->get();
+        return response()->json($checkouts);
+    }
+
+
     public function store(CheckoutRequest $request)
     {
         DB::beginTransaction();
@@ -74,4 +81,42 @@ class CheckoutController extends Controller
             ], 422);
         }
     }
+
+    public function getProductBestSeller(Request $request) 
+    {
+        $limit = $request->get('limit', 10);
+
+        // Ambil data agregat jumlah terjual per produk
+        $produkTerlaris = DB::table('checkout_items')
+            ->select('product_id', DB::raw('SUM(quantity) as total_terjual'))
+            ->groupBy('product_id')
+            ->orderByDesc('total_terjual')
+            ->limit($limit)
+            ->get();
+
+        // Ambil detail produk berdasarkan product_id dari checkout_items
+        $produkDetail = Product::with('category')
+            ->whereIn('id', $produkTerlaris->pluck('product_id'))
+            ->get()
+            ->keyBy('id');
+
+        // Susun data akhir
+        $data = $produkTerlaris->map(function ($item) use ($produkDetail) {
+            $produk = $produkDetail[$item->product_id] ?? null;
+
+            return [
+                'id' => $item->product_id,
+                'nama' => $produk->name ?? '-',
+                'kategori' => optional($produk->category)->name ?? '-',
+                'harga' => $produk->price ?? 0,
+                'total_terjual' => (int) $item->total_terjual,
+                'total_pendapatan' => $produk ? $produk->price * $item->total_terjual : 0,
+            ];
+        });
+
+        return response()->json([
+            'data' => $data->values() // pastikan reset index jika perlu
+        ]);
+    }
+
 }

@@ -43,22 +43,22 @@ class RolePermissionController extends Controller
       // Assign role to user
       public function assignRole(Request $request, User $user)
       {
-            $request->validate([
-                'role' => 'required|exists:roles,name',
-            ]);
-        
-            // Ambil role sesuai guard sanctum
-            $role = Role::where('name', $request->role)
-                        ->first();
-        
-            if (!$role) {
-                return response()->json(['error' => 'Role not found for guard sanctum.'], 404);
-            }
-        
-            // Assign role ke user
-            $user->assignRole($role);
-        
-            return response()->json(['message' => 'Role assigned.']);
+        $request->validate([
+            'role' => 'required|exists:roles,name',
+        ]);
+    
+        // Optional: pastikan role sesuai guard, contoh 'sanctum' atau 'web'
+        $role = Role::where('name', $request->role)
+                    //->where('guard_name', 'sanctum') // uncomment jika pakai guard khusus
+                    ->first();
+    
+        if (!$role) {
+            return response()->json(['error' => 'Role not found.'], 404);
+        }
+    
+        $user->assignRole($role); // atau $user->assignRole($request->role);
+    
+        return response()->json(['message' => 'Role assigned successfully.']);
       }
   
       // Assign permission to role
@@ -95,13 +95,18 @@ class RolePermissionController extends Controller
       // --- ROLE ---
 
     // Update a role
-    public function updateRole(Request $request, Role $role)
+    public function updateRole(Request $request, User $user)
     {
-        $request->validate(['name' => 'required|unique:roles,name,' . $role->id]);
-        $role->name = $request->name;
-        $role->save();
-
-        return response()->json(['message' => 'Role updated.', 'role' => $role]);
+        $request->validate([
+            'role' => 'required|string|exists:roles,name',
+        ]);
+    
+        $user->syncRoles([$request->role]);
+    
+        return response()->json([
+            'message' => 'Role updated successfully.',
+            'user' => $user->load('roles', 'permissions')
+        ]);
     }
 
     // Delete a role
@@ -134,7 +139,8 @@ class RolePermissionController extends Controller
     public function getUserRolesAndPermissions(User $user)
     {
         return response()->json([
-            'user_id' => $user->id,
+            'id' => $user->id,
+            'email' => $user->email,
             'name' => $user->name,
 
             // Semua role yang dimiliki user
@@ -149,4 +155,28 @@ class RolePermissionController extends Controller
     }
 
 
+    public function getAllUsersWithRolesAndPermissions()
+    {
+        $users = User::all();
+
+        if ($users->isEmpty()) {
+            return response()->json([
+                'message' => 'No users found.'
+            ], 404);
+        }
+        
+        $result = $users->map(function ($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'roles' => $user->getRoleNames(), // Role dari user
+                'permissions' => $user->getAllPermissions()->pluck('name'), // Semua permission (langsung & dari role)
+                'direct_permissions' => $user->getDirectPermissions()->pluck('name'), // Permission langsung
+            ];
+        });
+    
+        return response()->json($result);
+
+    }
 }

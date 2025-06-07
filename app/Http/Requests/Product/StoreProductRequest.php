@@ -5,6 +5,7 @@ namespace App\Http\Requests\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Crypt;
 
 class StoreProductRequest extends FormRequest
 {
@@ -15,6 +16,19 @@ class StoreProductRequest extends FormRequest
     {
         return true;
     }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('category')) {
+            try {
+                $this->merge([
+                    'category_id' => Crypt::decrypt($this->category),
+                ]);
+            } catch (\Exception $e) {
+                $this->merge(['category_id' => null]);
+            }
+        }
+    }    
 
     /**
      * Get the validation rules that apply to the request.
@@ -28,10 +42,10 @@ class StoreProductRequest extends FormRequest
             'category_id' => 'required|exists:categories,id',
             'price'       => 'required|numeric|min:0',
             'stock'       => 'required|integer|min:0',
-            'size'        => 'nullable|string|max:10',
-            'color'       => 'nullable|string|max:50',
+            'size'        => 'required|string|max:10',
+            'color'       => 'required|string|max:50',
             'description' => 'nullable|string',
-            'image'       => 'nullable|image|max:2048', // Maks 2MB
+            'image'       => 'required|image|max:2048', // Maks 2MB
         ];
     }
 

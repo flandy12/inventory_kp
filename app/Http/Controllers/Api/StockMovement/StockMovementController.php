@@ -6,8 +6,10 @@ use App\Exports\StockInExport;
 use App\Exports\StockOutExport;
 use App\Http\Controllers\Controller;
 use App\Models\StockMovement;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
+use Carbon\Carbon;
 
 class StockMovementController extends Controller
 {
@@ -23,10 +25,28 @@ class StockMovementController extends Controller
     }
 
     // Tampilkan stock movement dengan type = 'in'
-    public function stockin()
+    public function getStockIn()
     {
-        $stockin = StockMovement::where('type', 'in')->get();
+        $stockin = StockMovement::with('product.category')->where('type', 'in')
+        ->get()
+        ->map(function ($item) {
+            // convert model ke array dulu supaya semua atribut ikut terbawa
+            $data = $item->toArray();
 
+            // ubah format waktu
+            $data['created_at'] = Carbon::parse($data['created_at'])->format('Y-m-d H:i:s');
+            $data['updated_at'] = Carbon::parse($data['updated_at'])->format('Y-m-d H:i:s');
+
+            return $data;
+        });
+       
+        if ($stockin->isEmpty()) {
+            return response()->json([
+                'message' => 'Tidak ada data stok masuk.',
+                'data' => []
+            ], 200); // atau 404 jika kamu ingin tandai sebagai "not found"
+        }
+    
         return response()->json([
             'message' => 'Success',
             'data' => $stockin
@@ -34,14 +54,25 @@ class StockMovementController extends Controller
     }
 
     // Tampilkan stock movement dengan type = 'out'
-    public function stockout()
+    public function getStockOut()
     {
-        $stockout = StockMovement::where('type', 'out')->get();
+        $stockout = StockMovement::with('product.category')->where('type', 'out')
+        ->get()
+        ->map(function ($item) {
+            // convert model ke array dulu supaya semua atribut ikut terbawa
+            $data = $item->toArray();
 
+            // ubah format waktu
+            $data['created_at'] = Carbon::parse($data['created_at'])->format('Y-m-d H:i:s');
+            $data['updated_at'] = Carbon::parse($data['updated_at'])->format('Y-m-d H:i:s');
+
+            return $data;
+        });
         return response()->json([
             'message' => 'Success',
             'data' => $stockout
         ], 200);
+
     }
 
     // Tampilkan detail stock movement berdasarkan ID
@@ -132,4 +163,73 @@ class StockMovementController extends Controller
     {
         return Excel::download(new StockOutExport, 'stockout.xlsx');
     }
+
+    public function stockout(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required',
+            'quantity' => 'required|integer|min:1',
+            'notes' => 'nullable|string',
+        ]);
+
+        $product = Product::find(decrypt($request->product_id));
+
+        if ($product->stock < $request->quantity) {
+            return response()->json([
+                'message' => 'Not enough stock to perform stock out.'
+            ], 400);
+        }
+
+        // Kurangi stok produk
+        $product->stock -= $request->quantity;
+        $product->save();
+
+        // Catat ke tabel stock_movements
+        StockMovement::create([
+            'product_id' => $product->id,
+            'type' => 'out',
+            'quantity' => $request->quantity,
+            'notes' => $request->notes,
+        ]);
+
+        return response()->json([
+            'message' => 'Stock out successful and recorded.',
+            'product' => $product,
+        ]);
+    }
+
+    public function stockin(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required',
+            'quantity' => 'required|integer|min:1',
+            'notes' => 'nullable|string',
+        ]);
+
+        $product = Product::find($request->product_id);
+
+        if (!$product) {
+            return response()->json([
+                'message' => 'Product not found.'
+            ], 404);
+        }
+
+        // Tambah stok produk
+        $product->stock += $request->quantity;
+        $product->save();
+
+        // Catat ke tabel stock_movements
+        StockMovement::create([
+            'product_id' => $product->id,
+            'type' => 'in',
+            'quantity' => $request->quantity,
+            'notes' => $request->notes,
+        ]);
+
+        return response()->json([
+            'message' => 'Stock in successful and recorded.',
+            'product' => $product,
+        ]);
+    }
+
 }
